@@ -4,7 +4,6 @@ import PyPDF2
 import docx
 import requests
 import json
-import tiktoken
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -22,12 +21,10 @@ except:
     OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 def count_tokens(text):
-    """Count tokens in text using tiktoken"""
-    try:
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-        return len(encoding.encode(text))
-    except:
-        return len(text) // 4
+    """Count tokens using simple estimation (compatible with cloud deployment)"""
+    # Simple estimation: 1 token ≈ 4 characters for English text
+    # This is a rough approximation but works well for most cases
+    return len(text) // 4
 
 def extract_text_from_pdf(file_path):
     """Extract text from PDF file"""
