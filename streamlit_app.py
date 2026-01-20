@@ -245,187 +245,408 @@ def create_docx_from_text(text_content):
     return buffer
 
 # Streamlit UI
-st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="wide")
+st.set_page_config(
+    page_title="🚀 AI Resume Analyzer Pro",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.title("🚀 AI Resume Analyzer")
-st.markdown("---")
+# Custom CSS for professional design
+st.markdown("""
+<style>
+    .main-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .feature-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+    }
+    
+    .metric-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .success-box {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    
+    .error-box {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+    
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Professional Header
+st.markdown("""
+<div class="main-header">
+    <h1 style="margin: 0; font-size: 2.5rem;">🚀 AI Resume Analyzer Pro</h1>
+    <p style="margin: 0.5rem 0 0 0; font-size: 1.2rem; opacity: 0.9;">
+        🤖 Advanced AI-Powered Resume Optimization & Gap Analysis
+    </p>
+    <div style="margin-top: 1rem;">
+        <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; margin: 0 0.5rem;">
+            🔢 Token Management
+        </span>
+        <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; margin: 0 0.5rem;">
+            🧠 Few-shot Learning
+        </span>
+        <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; margin: 0 0.5rem;">
+            🎯 ATS Optimization
+        </span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Sidebar for file upload
 with st.sidebar:
-    st.header("📁 Upload Resume")
+    st.markdown("### 📁 Resume Upload")
+    st.markdown("---")
     
     uploaded_file = st.file_uploader(
-        "Upload your resume (PDF or DOCX)",
+        "📄 Choose Resume File",
         type=['pdf', 'docx'],
-        help="Upload your resume for AI analysis"
+        help="Upload your resume for AI analysis",
+        label_visibility="collapsed"
     )
     
-    job_description = st.text_area(
-        "📋 Job Description",
-        height=150,
-        placeholder="Paste the job description here...",
-        help="Provide the job description for better analysis"
-    )
-
-if uploaded_file is not None and job_description:
-    st.success("✅ Ready to analyze your resume!")
-    
-    if st.button("🔍 Analyze Resume", type="primary", use_container_width=True):
-        if uploaded_file is not None and job_description:
-            st.error("❌ Please upload a resume and provide job description")
-            st.stop()
+    if uploaded_file:
+        file_details = {
+            "Name": uploaded_file.name,
+            "Size": f"{uploaded_file.size / 1024:.1f} KB",
+            "Type": uploaded_file.type
+        }
         
-        with st.spinner("🤖 Analyzing with AI..."):
-            # Extract text from uploaded file
-            file_bytes = uploaded_file.read()
-            
-            # Save temporarily
-            with open("temp_resume", "wb") as f:
-                f.write(file_bytes)
-            
-            # Extract text based on file type
-            if uploaded_file.type == "application/pdf":
-                resume_text = extract_text_from_pdf("temp_resume")
-            else:
-                resume_text = extract_text_from_docx("temp_resume")
-            
-            # Analyze with AI
-            analysis_result = analyze_resume_with_ai(resume_text, job_description)
-            
-            # Generate optimized resume
-            if "error" not in analysis_result:
-                optimized_resume = generate_optimized_resume(resume_text, job_description, analysis_result)
-                analysis_result["optimized_resume"] = optimized_resume
-            
-            # Clean up
-            if os.path.exists("temp_resume"):
-                os.remove("temp_resume")
+        st.markdown("""
+        <div class="feature-card">
+            <h4>📋 File Information</h4>
+            <p><strong>Name:</strong> {}</p>
+            <p><strong>Size:</strong> {}</p>
+            <p><strong>Type:</strong> {}</p>
+        </div>
+        """.format(file_details["Name"], file_details["Size"], file_details["Type"]), unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### 📋 Job Description")
+    job_description = st.text_area(
+        "🎯 Paste Target Job Description",
+        height=150,
+        placeholder="Paste the complete job description here for better analysis...",
+        help="Provide detailed job description for comprehensive gap analysis",
+        label_visibility="collapsed"
+    )
+    
+    if job_description:
+        char_count = len(job_description)
+        st.markdown(f"""
+        <div style="margin-top: 1rem; padding: 0.5rem; background: #f0f2f5; border-radius: 5px; text-align: center;">
+            <small>📝 Character Count: {char_count}</small>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Analysis Button
+    if uploaded_file and job_description:
+        st.markdown("""
+        <div style="text-align: center; margin: 2rem 0;">
+            <button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                🚀 Start AI Analysis
+            </button>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("🚀 Analyze Resume", type="primary", use_container_width=True):
+            analyze_resume(uploaded_file, job_description)
+    else:
+        st.markdown("""
+        <div class="warning-box">
+            <strong>⚠️ Ready to Analyze</strong><br>
+            Please upload both resume and job description to start the AI analysis.
+        </div>
+        """, unsafe_allow_html=True)
+
+def analyze_resume(uploaded_file, job_description):
+    """Main analysis function"""
+    with st.spinner("🤖 Performing Advanced AI Analysis..."):
+        # Extract text from uploaded file
+        file_bytes = uploaded_file.read()
+        
+        # Save temporarily
+        with open("temp_resume", "wb") as f:
+            f.write(file_bytes)
+        
+        # Extract text based on file type
+        if uploaded_file.type == "application/pdf":
+            resume_text = extract_text_from_pdf("temp_resume")
+        else:
+            resume_text = extract_text_from_docx("temp_resume")
+        
+        # Analyze with AI
+        analysis_result = analyze_resume_with_ai(resume_text, job_description)
+        
+        # Generate optimized resume
+        if "error" not in analysis_result:
+            optimized_resume = generate_optimized_resume(resume_text, job_description, analysis_result)
+            analysis_result["optimized_resume"] = optimized_resume
+        
+        # Clean up
+        if os.path.exists("temp_resume"):
+            os.remove("temp_resume")
         
         # Display results
+        display_analysis_results(analysis_result)
+
+def display_analysis_results(analysis_result):
+    """Display professional analysis results"""
+    st.markdown("---")
+    
+    if "error" in analysis_result:
+        st.markdown(f"""
+        <div class="error-box">
+            <h4>❌ Analysis Error</h4>
+            <p>{analysis_result['error']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+    
+    # Match Score Section
+    match_percentage = analysis_result.get('match_percentage', 0)
+    st.markdown(f"""
+    <div class="metric-card">
+        <h2 style="margin: 0; font-size: 2rem;">🎯 Match Score</h2>
+        <div style="font-size: 3rem; font-weight: bold; margin: 1rem 0;">
+            {match_percentage}%
+        </div>
+        <p style="margin: 0; opacity: 0.8;">Resume-Job Compatibility Score</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Progress Bar
+    st.progress(match_percentage / 100)
+    
+    # Analysis Results
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>✅ Strengths</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        strengths = analysis_result.get('strengths', [])
+        for strength in strengths:
+            st.markdown(f"""
+            <div class="success-box">
+                <strong>✓</strong> {strength}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>⚠️ Missing Skills</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        missing_skills = analysis_result.get('missing_skills', [])
+        for skill in missing_skills:
+            st.markdown(f"""
+            <div class="warning-box">
+                <strong>!</strong> {skill}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Recommendations
+    st.markdown("""
+    <div class="feature-card">
+        <h3>💡 Professional Recommendations</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    recommendations = analysis_result.get('recommendations', [])
+    for rec in recommendations:
+        st.markdown(f"""
+        <div style="background: #e3f2fd; border-left: 4px solid #667eea; padding: 1rem; margin: 0.5rem 0; border-radius: 5px;">
+            <strong>🎯</strong> {rec}
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Key Matches
+    if 'key_matches' in analysis_result:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🎯 Key Matches</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        key_matches = analysis_result['key_matches']
+        for match in key_matches:
+            st.markdown(f"""
+            <div style="background: #f0fff4; border: 1px solid #e8f5e8; padding: 1rem; margin: 0.5rem 0; border-radius: 5px;">
+                <strong>✓</strong> {match}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Critical Gaps
+    if 'critical_gaps' in analysis_result:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🚨 Critical Gaps</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        gaps = analysis_result['critical_gaps']
+        for gap in gaps:
+            st.markdown(f"""
+            <div class="error-box">
+                <strong>⚠️</strong> {gap}
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Overall Assessment
+    overall_assessment = analysis_result.get('overall_assessment', 'No assessment available')
+    st.markdown(f"""
+    <div class="feature-card">
+        <h3>📊 Overall Assessment</h3>
+        <p style="font-size: 1.1rem; line-height: 1.6;">{overall_assessment}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Optimized Resume Section
+    if "optimized_resume" in analysis_result:
         st.markdown("---")
-        st.header("📊 Analysis Results")
+        st.markdown("""
+        <div class="feature-card">
+            <h3>📄 AI-Optimized Resume</h3>
+            <p style="color: #667eea; font-weight: bold; margin-bottom: 1rem;">
+                ✨ Professionally formatted for ATS systems and recruiters
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        if "error" in analysis_result:
-            st.error(f"❌ {analysis_result['error']}")
-        else:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("🎯 Match Score")
-                match_percentage = analysis_result.get('match_percentage', 0)
-                st.progress(match_percentage / 100)
-                st.metric("Match Percentage", f"{match_percentage}%")
-            
-            with col2:
-                st.subheader("📈 Overall Assessment")
-                st.info(analysis_result.get('overall_assessment', 'No assessment available'))
-            
-            # Detailed analysis
-            col3, col4 = st.columns(2)
-            
-            with col3:
-                st.subheader("✅ Strengths")
-                strengths = analysis_result.get('strengths', [])
-                for strength in strengths:
-                    st.success(f"• {strength}")
-            
-            with col4:
-                st.subheader("⚠️ Missing Skills")
-                missing_skills = analysis_result.get('missing_skills', [])
-                for skill in missing_skills:
-                    st.error(f"• {skill}")
-            
-            # Recommendations
-            st.subheader("💡 Recommendations")
-            recommendations = analysis_result.get('recommendations', [])
-            for rec in recommendations:
-                st.info(f"• {rec}")
-            
-            # Key Matches
-            st.subheader("🎯 Key Matches")
-            key_matches = analysis_result.get('key_matches', [])
-            for match in key_matches:
-                st.success(f"• {match}")
-            
-            # Critical Gaps
-            if 'critical_gaps' in analysis_result:
-                st.subheader("🚨 Critical Gaps")
-                gaps = analysis_result['critical_gaps']
-                for gap in gaps:
-                    st.warning(f"• {gap}")
-            
-            # ATS Keywords
-            if 'ats_keywords' in analysis_result:
-                st.subheader("🔑 ATS Keywords")
-                keywords = analysis_result['ats_keywords']
-                for keyword in keywords:
-                    st.info(f"• {keyword}")
+        # Resume Preview
+        st.markdown("#### 📋 Resume Preview")
+        st.text_area(
+            "Optimized resume content:",
+            value=analysis_result["optimized_resume"],
+            height=400,
+            help="Your professionally optimized resume content",
+            label_visibility="collapsed"
+        )
         
-        # Optimized Resume
-        if "optimized_resume" in analysis_result:
-            st.markdown("---")
-            st.header("📄 AI-Optimized Resume")
-            
-            st.markdown("### 📋 Resume Preview")
-            st.text_area(
-                "Optimized resume content:",
-                value=analysis_result["optimized_resume"],
-                height=400,
-                help="Your professionally optimized resume"
-            )
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("📥 Download PDF", type="secondary"):
-                    pdf_buffer = create_pdf_from_text(analysis_result["optimized_resume"])
-                    st.download_button(
-                        label="Download Optimized Resume (PDF)",
-                        data=pdf_buffer.getvalue(),
-                        file_name="optimized_resume.pdf",
-                        mime="application/pdf"
-                    )
-            
-            with col2:
-                if st.button("📝 Download DOCX", type="secondary"):
-                    docx_buffer = create_docx_from_text(analysis_result["optimized_resume"])
-                    st.download_button(
-                        label="Download Optimized Resume (DOCX)",
-                        data=docx_buffer.getvalue(),
-                        file_name="optimized_resume.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    )
+        # Download Options
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📥 Download PDF", type="secondary", use_container_width=True):
+                pdf_buffer = create_pdf_from_text(analysis_result["optimized_resume"])
+                st.download_button(
+                    label="📄 Download Resume (PDF)",
+                    data=pdf_buffer.getvalue(),
+                    file_name="optimized_resume.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+        
+        with col2:
+            if st.button("📝 Download DOCX", type="secondary", use_container_width=True):
+                docx_buffer = create_docx_from_text(analysis_result["optimized_resume"])
+                st.download_button(
+                    label="📝 Download Resume (DOCX)",
+                    data=docx_buffer.getvalue(),
+                    file_name="optimized_resume.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True
+                )
+
+# Instructions
+with st.expander("📖 How to Use", expanded=False):
+    st.markdown("""
+    ### 🚀 Getting Started:
+    1. **📁 Upload Resume**: Click "Choose Resume File" to upload your PDF or DOCX resume
+    2. **📋 Add Job Description**: Paste target job description
+    3. **🚀 Analyze**: Click "Start AI Analysis" for comprehensive analysis
+    4. **📥 Download**: Get your optimized resume in PDF or DOCX format
+    
+    ### ✨ Advanced Features:
+    - **🔢 Token Management**: Handles resumes of any length with intelligent processing
+    - **🧠 Few-shot Learning**: Uses examples for better AI accuracy
+    - **🔗 Chain-of-Thought**: Step-by-step reasoning for comprehensive analysis
+    - **🎯 ATS Optimization**: Industry-specific keyword integration
+    - **📊 Professional Analysis**: Gap analysis and recommendations
+    - **📄 Multiple Formats**: PDF and DOCX download options
+    
+    ### 🎯 Benefits:
+    - **✅ Higher Match Rates**: Better alignment with job requirements
+    - **✅ ATS-Friendly**: Optimized for automated screening
+    - **✅ Professional Format**: Industry-standard resume structure
+    - **✅ Quantified Achievements**: Metrics-based accomplishments
+    - **✅ Free to Use**: No cost for advanced AI analysis
+    """)
 
 # Footer
 st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; color: #666; padding: 20px;'>
-        <p>🤖 Built with ❤️ using Streamlit, OpenAI API & Advanced AI</p>
-        <p style='font-size: 12px;'>🔧 Features: Token Management | Few-shot Prompting | Chain-of-Thought Analysis</p>
-    </div>
-    """
-)
-
-# Instructions
-with st.expander("📖 How to Use"):
-    st.markdown("""
-    ### 🚀 Getting Started:
-    1. **Upload Resume**: Click "Browse files" to upload your PDF or DOCX resume
-    2. **Add Job Description**: Paste the target job description
-    3. **Analyze**: Click "Analyze Resume" to get comprehensive AI analysis
-    4. **Download**: Get your optimized resume in PDF or DOCX format
-    
-    ### ✨ Advanced Features:
-    - **🔢 Token Management**: Automatically handles long resumes with intelligent chunking
-    - **🧠 Few-shot Prompting**: Uses examples for better analysis quality
-    - **🔗 Chain-of-Thought**: Step-by-step reasoning for comprehensive analysis
-    - **📄 ATS Optimization**: Optimized for applicant tracking systems
-    
-    ### 🎯 Benefits:
-    - Professional resume optimization
-    - Gap analysis and recommendations
-    - Industry-specific keyword optimization
-    - Quantifiable achievement suggestions
-    - Multiple download formats
-    """)
+st.markdown("""
+<div style='text-align: center; color: #667eea; padding: 20px; border-top: 2px solid #f0f2f5; margin-top: 2rem;'>
+    <p style="margin: 0; font-weight: bold;">
+        🤖 Built with ❤️ using Advanced AI Technologies
+    </p>
+    <p style='margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #666;'>
+        🔧 Features: Token Management | Few-shot Prompting | Chain-of-Thought | ATS Optimization
+    </p>
+    <p style='margin: 0; font-size: 0.8rem; color: #999;'>
+        🌐 Deployed on Streamlit Cloud | Professional Resume Analysis Tool
+    </p>
+</div>
+""", unsafe_allow_html=True)
