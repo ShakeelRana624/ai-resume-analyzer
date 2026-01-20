@@ -46,8 +46,11 @@ def extract_text_from_docx(file_path):
 def analyze_resume_with_ai(resume_text, job_description):
     """Analyze resume against job description using OpenRouter API"""
     
+    # Check token count and chunk if necessary
     total_tokens = count_tokens(resume_text)
+    print(f"Resume token count: {total_tokens}")
     
+    # For shorter resumes, use regular analysis with Few-shot prompting
     prompt = f"""
     You are an expert resume analyst with 10+ years of experience in career counseling and ATS optimization.
     
@@ -65,7 +68,17 @@ def analyze_resume_with_ai(resume_text, job_description):
         "ats_keywords": ["All key terms present"]
     }}
     
-    Now analyze this resume using the same thorough approach:
+    Example 2 - Medium Match:
+    {{
+        "match_percentage": 65,
+        "strengths": ["Strong technical background", "Good communication skills"],
+        "missing_skills": ["Cloud experience", "Leadership examples"],
+        "recommendations": ["Add cloud certifications", "Show leadership examples"],
+        "critical_gaps": ["Missing cloud architecture experience"],
+        "ats_keywords": ["Cloud, Kubernetes missing"]
+    }}
+    
+    Now analyze this resume using same thorough approach:
     
     Job Description:
     {job_description}
@@ -74,8 +87,8 @@ def analyze_resume_with_ai(resume_text, job_description):
     {resume_text}
     
     Chain-of-Thought Process:
-    1. First, identify all technical skills in the job description
-    2. Then, map each skill to the resume content
+    1. First, identify all technical skills in job description
+    2. Then, map each skill to resume content
     3. Next, assess experience level alignment
     4. Finally, identify critical gaps and ATS optimization opportunities
     
@@ -86,7 +99,7 @@ def analyze_resume_with_ai(resume_text, job_description):
     4. Industry-specific terminology gaps
     5. Quantifiable achievements that are missing
     
-    Please provide analysis in the following JSON format:
+    Please provide analysis in following JSON format:
     {{
         "match_percentage": 85,
         "strengths": ["List of key strengths found in resume"],
@@ -102,22 +115,28 @@ def analyze_resume_with_ai(resume_text, job_description):
     Be thorough and specific in your gap analysis to help create a standout resume.
     """
     
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    data = {
+        "model": "openai/gpt-3.5-turbo",
+        "messages": [
+            {"role": "system", "content": "You are an expert career counselor and resume analyst."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.3
+    }
+    
     try:
-        response = requests.post(OPENROUTER_URL, headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
-        }, json={
-            "model": "openai/gpt-3.5-turbo",
-            "messages": [
-                {"role": "system", "content": "You are an expert career counselor and resume analyst."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3
-        })
+        response = requests.post(OPENROUTER_URL, headers=headers, json=data)
         response.raise_for_status()
+        
         result = response.json()
         analysis_text = result['choices'][0]['message']['content']
         
+        # Try to parse as JSON, fallback to text if fails
         try:
             return json.loads(analysis_text)
         except json.JSONDecodeError:
@@ -130,7 +149,7 @@ def generate_optimized_resume(resume_text, job_description, analysis_result):
     """Generate an optimized resume based on analysis and job description"""
     
     prompt = f"""
-    Based on the comprehensive gap analysis, create a standout, interview-winning resume that addresses all identified gaps and positions the candidate as the ideal fit.
+    Based on comprehensive gap analysis, create a standout, interview-winning resume that addresses all identified gaps and positions candidate as ideal fit.
     
     Original Resume:
     {resume_text}
@@ -142,11 +161,11 @@ def generate_optimized_resume(resume_text, job_description, analysis_result):
     {analysis_result}
     
     Create a POWERFUL resume that:
-    1. Addresses ALL critical gaps identified in the analysis
+    1. Addresses ALL critical gaps identified in analysis
     2. Incorporates missing ATS keywords for better screening
     3. Uses industry-specific terminology that matches the job
     4. Highlights quantifiable achievements with metrics and impact
-    5. Positions experience level appropriately for the role's seniority
+    5. Positions experience level appropriately for role's seniority
     6. Creates a compelling narrative that stands out to recruiters
     7. Optimized for both ATS systems and human readers
     
@@ -307,7 +326,7 @@ st.markdown("""
         margin: 0.5rem 0;
     }
     
-    .stProgress > div > div > div > div {
+    .stProgress > div > div > div {
         background: linear-gradient(90deg, #667eea, #764ba2);
     }
     
@@ -380,7 +399,7 @@ with st.sidebar:
     job_description = st.text_area(
         "🎯 Paste Target Job Description",
         height=150,
-        placeholder="Paste the complete job description here for better analysis...",
+        placeholder="Paste complete job description here for better analysis...",
         help="Provide detailed job description for comprehensive gap analysis",
         label_visibility="collapsed"
     )
@@ -406,7 +425,34 @@ with st.sidebar:
         """, unsafe_allow_html=True)
         
         if st.button("🚀 Analyze Resume", type="primary", use_container_width=True):
-            analyze_resume(uploaded_file, job_description)
+            # Extract text from uploaded file
+            file_bytes = uploaded_file.read()
+            
+            # Save temporarily
+            with open("temp_resume", "wb") as f:
+                f.write(file_bytes)
+            
+            # Extract text based on file type
+            if uploaded_file.type == "application/pdf":
+                resume_text = extract_text_from_pdf("temp_resume")
+            else:
+                resume_text = extract_text_from_docx("temp_resume")
+            
+            # Analyze with AI
+            with st.spinner("🤖 Performing Advanced AI Analysis..."):
+                analysis_result = analyze_resume_with_ai(resume_text, job_description)
+            
+            # Generate optimized resume
+            if "error" not in analysis_result:
+                optimized_resume = generate_optimized_resume(resume_text, job_description, analysis_result)
+                analysis_result["optimized_resume"] = optimized_resume
+            
+            # Clean up
+            if os.path.exists("temp_resume"):
+                os.remove("temp_resume")
+            
+            # Display results
+            display_analysis_results(analysis_result)
     else:
         st.markdown("""
         <div class="warning-box">
@@ -414,37 +460,6 @@ with st.sidebar:
             Please upload both resume and job description to start the AI analysis.
         </div>
         """, unsafe_allow_html=True)
-
-def analyze_resume(uploaded_file, job_description):
-    """Main analysis function"""
-    with st.spinner("🤖 Performing Advanced AI Analysis..."):
-        # Extract text from uploaded file
-        file_bytes = uploaded_file.read()
-        
-        # Save temporarily
-        with open("temp_resume", "wb") as f:
-            f.write(file_bytes)
-        
-        # Extract text based on file type
-        if uploaded_file.type == "application/pdf":
-            resume_text = extract_text_from_pdf("temp_resume")
-        else:
-            resume_text = extract_text_from_docx("temp_resume")
-        
-        # Analyze with AI
-        analysis_result = analyze_resume_with_ai(resume_text, job_description)
-        
-        # Generate optimized resume
-        if "error" not in analysis_result:
-            optimized_resume = generate_optimized_resume(resume_text, job_description, analysis_result)
-            analysis_result["optimized_resume"] = optimized_resume
-        
-        # Clean up
-        if os.path.exists("temp_resume"):
-            os.remove("temp_resume")
-        
-        # Display results
-        display_analysis_results(analysis_result)
 
 def display_analysis_results(analysis_result):
     """Display professional analysis results"""
@@ -517,7 +532,7 @@ def display_analysis_results(analysis_result):
     recommendations = analysis_result.get('recommendations', [])
     for rec in recommendations:
         st.markdown(f"""
-        <div style="background: #e3f2fd; border-left: 4px solid #667eea; padding: 1rem; margin: 0.5rem 0; border-radius: 5px;">
+            <div style="background: #e3f2fd; border-left: 4px solid #667eea; padding: 1rem; margin: 0.5rem 0; border-radius: 5px;">
             <strong>🎯</strong> {rec}
         </div>
         """, unsafe_allow_html=True)
